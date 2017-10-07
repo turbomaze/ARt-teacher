@@ -5,5 +5,11 @@ Bob Ross AR aims is an augmented reality experience that helps beginner artists 
 
 Developed at the Reality Virtually hackathon  on October 6-9, 2017.
 
+## Dependencies
+
+This project includes the following libraries:
+
+* [js-objectdetect](https://github.com/mtschirs/js-objectdetect) -- for face detection
+
 ## License
 MIT License

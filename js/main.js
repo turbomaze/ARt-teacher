@@ -13,32 +13,23 @@ class BobRossAr {
   static registerVideoHandlers(width, height, streamCb, errCb) {
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
     if (navigator.getUserMedia) {
-      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      if (location.hash !== '#desktop') {
         navigator.getUserMedia(
           {
             video: {
               width: width,
               height: height,
-              facingMode: {
-                exact: "environment"
-              }
+              facingMode: { exact: "environment" }
             },
             audio: false
-          },
-          streamCb,
-          errCb
+          }, streamCb, errCb
         );
       } else {
         navigator.getUserMedia(
           {
-            video: {
-              width: width,
-              height: height
-            },
+            video: { width: width, height: height },
             audio: false
-          },
-          streamCb,
-          errCb
+          }, streamCb, errCb
         );
       }
     } else {
@@ -58,23 +49,19 @@ class BobRossAr {
     this.fps = fps;
     this.time = 0;
     this.frames = 0;
-    this.TEMPLATE = [
-      -4, -4, -3, -2, -2, +1, +1, +1, +1, +1, -2, -2, -3, -4, -4,
-      -4, -3, -2, +1, +1, +1, +1, +1, +1, +1, +1, +1, -2, -3, -4,
-      -3, -2, +1, +1, +1, +1, +1, -2, +1, +1, +1, +1, +1, -2, -3,
-      -2, +1, +1, +1, +1, -2, -2, -2, -2, -2, +1, +1, +1, +1, -2,
-      -2, +1, +1, +1, -2, -2, -2, -2, -2, -2, -2, +1, +1, +1, -2,
-      +1, +1, +1, -2, -2, -2, +1, +1, +1, -2, -2, -2, +1, +1, +1,
-      +1, +1, +1, -2, -2, +1, +1, +1, +1, +1, -2, -2, +1, +1, +1,
-      +1, +1, -2, -2, -2, +1, +1, +1, +1, +1, -2, -2, -2, +1, +1,
-      +1, +1, +1, -2, -2, +1, +1, +1, +1, +1, -2, -2, +1, +1, +1,
-      +1, +1, +1, -2, -2, -2, +1, +1, +1, -2, -2, -2, +1, +1, +1,
-      -2, +1, +1, +1, -2, -2, -2, -2, -2, -2, -2, +1, +1, +1, -2,
-      -2, +1, +1, +1, +1, -2, -2, -2, -2, -2, +1, +1, +1, +1, -2,
-      -3, -2, +1, +1, +1, +1, +1, -2, +1, +1, +1, +1, +1, -2, -3,
-      -4, -3, -2, +1, +1, +1, +1, +1, +1, +1, +1, +1, -2, -3, -4,
-      -4, -4, -3, -2, -2, +1, +1, +1, +1, +1, -2, -2, -3, -4, -4
-    ];
+
+    // objectdetect stuff
+    const detectorSize = 120;
+    this.smoother = new Smoother(
+      [0.9999999, 0.9999999, 0.999, 0.999],
+      [0, 0, 0, 0]
+    );
+    this.detector = new objectdetect.detector(
+      detectorSize * (this.width / this.height),
+      detectorSize,
+      1.1,
+      objectdetect.frontalface_alt
+    );
   }
 
   start() {
@@ -131,57 +118,25 @@ class BobRossAr {
 
   process() {
     const self = this;
-    const data = this.renderCtx.getImageData(0, 0, this.renderCanvas.width, this.renderCanvas.height);
+    const faces = this.detector.detect(this.video, 1).map((face) => {
+      const widthMultiplier = self.video.videoWidth / self.detector.canvas.width;
+      const heightMultiplier = self.video.videoHeight / self.detector.canvas.height;
+  		// Rescale coordinates from detector to video coordinate space:
+      return {
+        x: face[0] * widthMultiplier,
+        y: face[1] * heightMultiplier,
+        width: face[2] * widthMultiplier,
+        height: face[3] * heightMultiplier,
+        confidence: face[4],
+      };
+    }).filter(face => {
+      return face.confidence > 0;
+    });
 
-    // luminance
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
-        const i = 4 * (y * this.width + x);
-        const lightness = 0.3 * data.data[i + 0] + 0.58 * data.data[i + 1] + 0.11 * data.data[i + 2];
-        data.data[i + 0] = Math.floor(lightness);
-        data.data[i + 1] = Math.floor(lightness);
-        data.data[i + 2] = Math.floor(lightness);
-      }
-    }
-
-    // edges
-    const colorEdges = this.renderCtx.createImageData(this.width, this.height);
-    const edges = new Uint8Array(this.width * this.height);
-    const thresh = 5;
-    for (let y = 1; y < this.height - 1; y++) {
-      for (let x = 1; x < this.width - 1; x++) {
-        // implied kernel: [-1, 0, 1]
-        const i = 4 * (y * this.width + x);
-        const it = 4 * ((y - 1) * this.width + x);
-        const ir = 4 * (y * this.width + x + 1);
-        const ib = 4 * ((y + 1) * this.width + x);
-        const il = 4 * (y * this.width + x - 1);
-        const xdiff = data.data[ir + 0] - data.data[il + 0];
-        const ydiff = data.data[it + 0] - data.data[ib + 0];
-        const isEdge = xdiff > thresh || ydiff > thresh;
-        const color = isEdge ? 255 : 0;
-        edges[i / 4] = +isEdge;
-        colorEdges.data[i + 0] = color;
-        colorEdges.data[i + 1] = color;
-        colorEdges.data[i + 2] = color;
-        colorEdges.data[i + 3] = 255;
-      }
-    }
-
-    // render the edges
-    // this.renderCtx.putImageData(colorEdges, 0, 0);
-
-    // template match for circles
-    const result = BobRossAr.applyBinaryFilter(
-      edges, this.width, this.height, this.TEMPLATE, 15, 15, 30, 0
-    );
     this.renderCtx.strokeStyle = 'red';
-    for (let i = 0; i < result.length; i++) {
-      if (result[i]) {
-        const x = i % this.width;
-        const y = Math.floor(i / this.width);
-        this.renderCtx.strokeRect(x - 7, y - 7, 15, 15);
-      }
+    for (let i = 0; i < faces.length; i++) {
+      const face = faces[i];
+      this.renderCtx.strokeRect(face.x, face.y, face.width, face.height);
     }
   }
 
