@@ -102,15 +102,38 @@ class BobRossAr {
   process() {
     const self = this;
     const data = this.renderCtx.getImageData(0, 0, this.renderCanvas.width, this.renderCanvas.height);
-    for (let y = 0; y < this.renderCanvas.height; y++) {
-      for (let x = 0; x < this.renderCanvas.width; x++) {
-        const i = 4 * (y * this.renderCanvas.width + x);
-        data.data[i + 0] = data.data[i + 0];
-        data.data[i + 1] = data.data[i + 0];
-        data.data[i + 2] = data.data[i + 0];
+
+    // luminance
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const i = 4 * (y * this.width + x);
+        const lightness = 0.3 * data.data[i + 0] + 0.58 * data.data[i + 1] + 0.11 * data.data[i + 2];
+        data.data[i + 0] = Math.floor(lightness);
+        data.data[i + 1] = Math.floor(lightness);
+        data.data[i + 2] = Math.floor(lightness);
       }
     }
-    this.renderCtx.putImageData(data, 0, 0);
+
+    // horizontal edges
+    const edges = this.renderCtx.createImageData(this.width, this.height);
+    for (let y = 1; y < this.height - 1; y++) {
+      for (let x = 1; x < this.width - 1; x++) {
+        // implied kernel: [-1, 0, 1]
+        const i = 4 * (y * this.width + x);
+        const it = 4 * ((y - 1) * this.width + x);
+        const ir = 4 * (y * this.width + x + 1);
+        const ib = 4 * ((y + 1) * this.width + x);
+        const il = 4 * (y * this.width + x - 1);
+        const xdiff = data.data[ir + 0] - data.data[il + 0];
+        const ydiff = data.data[it + 0] - data.data[ib + 0];
+        const color = (xdiff > 10 || ydiff > 10) ? 255 : 0;
+        edges.data[i + 0] = color;
+        edges.data[i + 1] = color;
+        edges.data[i + 2] = color;
+        edges.data[i + 3] = 255;
+      }
+    }
+    this.renderCtx.putImageData(edges, 0, 0);
   }
 }
 
