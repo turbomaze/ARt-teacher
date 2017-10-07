@@ -3,11 +3,33 @@ class BobRossAr {
     const bobRossAr = new BobRossAr(
       640, 360,
       15,
-      document.getElementById("camera"),
-      document.getElementById("render")
+      document.getElementById('camera'),
+      document.getElementById('render')
     );
+    document.getElementById('render').style.display = 'none';
 
-    bobRossAr.start();
+    document.body.addEventListener('click', function() {
+      if (!bobRossAr.isFullScreen) {
+        if (document.location.hash !== '#desktop') {
+          BobRossAr.forceFullScreen();
+        }
+        bobRossAr.isFullScreen = true;
+
+        document.getElementById('fullscreen-message').className = 'clicked';
+        bobRossAr.start();
+        document.getElementById('render').style.display = 'block';
+        document.getElementById('fullscreen-message').style.display = 'none';
+      }
+    });
+
+    if (!document.location.hash.startsWith('#desktop')) {
+      try {
+        screen.orientation.lock('landscape');
+      } catch (e) {
+        console.log('Encountered screen orientation lock error.');
+        console.log(e);
+      }
+    }
   }
 
   static registerVideoHandlers(width, height, streamCb, errCb) {
@@ -19,7 +41,7 @@ class BobRossAr {
             video: {
               width: width,
               height: height,
-              facingMode: { exact: "environment" }
+              facingMode: { exact: 'environment' }
             },
             audio: false
           }, streamCb, errCb
@@ -34,15 +56,34 @@ class BobRossAr {
       }
     } else {
       errorCallback({
-        message: "Unforunately your browser doesn't support getUserMedia. Try chrome."
+        message: 'Unforunately your browser doesn\'t support getUserMedia. Try chrome.'
       });
+    }
+  }
+
+  static forceFullScreen() {
+    const doc = window.document;
+    const docEl = doc.documentElement;
+    const requestFullScreen =
+      docEl.requestFullscreen ||
+      docEl.mozRequestFullScreen ||
+      docEl.webkitRequestFullScreen ||
+      docEl.msRequestFullscreen;
+    if (
+      !doc.fullscreenElement &&
+      !doc.mozFullScreenElement &&
+      !doc.webkitFullscreenElement &&
+      !doc.msFullscreenElement
+    ) {
+      requestFullScreen.call(docEl);
     }
   }
 
   constructor(width, height, fps, video, renderCanvas) {
     this.video = video;
     this.renderCanvas = renderCanvas;
-    this.renderCtx = this.renderCanvas.getContext("2d");
+    this.renderCtx = this.renderCanvas.getContext('2d');
+    this.isFullScreen = false;
     this.isStreaming = false;
     this.width = width;
     this.height = height;
@@ -69,11 +110,11 @@ class BobRossAr {
 
     // initialize the canvas for drawing
     this.video.addEventListener(
-      "canplay",
+      'canplay',
       function(e) {
         if (!self.isStreaming) {
-          self.renderCanvas.setAttribute("width", self.width);
-          self.renderCanvas.setAttribute("height", self.height);
+          self.renderCanvas.setAttribute('width', self.width);
+          self.renderCanvas.setAttribute('height', self.height);
           self.isStreaming = true;
         }
       },
@@ -82,7 +123,7 @@ class BobRossAr {
 
     // set up the drawing loop
     this.video.addEventListener(
-      "play",
+      'play',
       function() {
         // Every n milliseconds copy the video image to the canvas
         setInterval(function() {
@@ -96,9 +137,9 @@ class BobRossAr {
 
           const duration = +new Date() - start;
           const fontSize = 32;
-          self.renderCtx.font = fontSize + "px Arial";
-          self.renderCtx.fillStyle = "black";
-          self.renderCtx.fillText(duration + "ms", 10, fontSize);
+          self.renderCtx.font = fontSize + 'px Arial';
+          self.renderCtx.fillStyle = 'black';
+          self.renderCtx.fillText(duration + 'ms', 10, fontSize);
           self.time += duration;
           self.frames += 1;
         }, 1000 / self.fps);
@@ -116,7 +157,7 @@ class BobRossAr {
           self.video.play();
         };
       },
-      err => alert("Oops: " + err.code + ")")
+      err => alert('Oops: ' + err.code + ')')
     );
   }
 

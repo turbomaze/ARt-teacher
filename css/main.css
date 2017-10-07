@@ -6,3 +6,19 @@
 video {
   display: none;
 }
+
+#fullscreen-message {
+  display: table;
+  width: 100%;
+  height: 100vh;
+  background-color: #c0c0c0;
+}
+
+#fullscreen-message h1 {
+	color: #0c0c0c;
+  display: table-cell;
+  font-family: 'Audiowide', sans-serif;
+  font-size: 2rem;
+  text-align: center;
+  vertical-align: middle;
+}
