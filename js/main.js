@@ -94,13 +94,13 @@ class BobRossAr {
     // objectdetect stuff
     const detectorSize = 120;
     this.smoother = new Smoother(
-      [0.9999999, 0.9999999, 0.999, 0.999],
+      [0.9, 0.9, 0.9, 0.9],
       [0, 0, 0, 0]
     );
     this.detector = new objectdetect.detector(
       detectorSize * (this.width / this.height),
       detectorSize,
-      3,
+      1.5,
       objectdetect.frontalface_alt
     );
   }
