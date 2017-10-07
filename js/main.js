@@ -13,21 +13,34 @@ class BobRossAr {
   static registerVideoHandlers(width, height, streamCb, errCb) {
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
     if (navigator.getUserMedia) {
-      navigator.getUserMedia(
-        {
-          video: {
-            width: width,
-            height: height
+      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        navigator.getUserMedia(
+          {
+            video: {
+              width: width,
+              height: height,
+              facingMode: {
+                exact: "environment"
+              }
+            },
+            audio: false
           },
-          audio: false
-        },
-        streamCb,
-        errCb
-      );
-      // mobile later:
-      //   facingMode: {
-      //     exact: "environment"
-      //   }
+          streamCb,
+          errCb
+        );
+      } else {
+        navigator.getUserMedia(
+          {
+            video: {
+              width: width,
+              height: height
+            },
+            audio: false
+          },
+          streamCb,
+          errCb
+        );
+      }
     } else {
       errorCallback({
         message: "Unforunately your browser doesn't support getUserMedia. Try chrome."
@@ -45,6 +58,23 @@ class BobRossAr {
     this.fps = fps;
     this.time = 0;
     this.frames = 0;
+    this.TEMPLATE = [
+      -4, -4, -3, -2, -2, +1, +1, +1, +1, +1, -2, -2, -3, -4, -4,
+      -4, -3, -2, +1, +1, +1, +1, +1, +1, +1, +1, +1, -2, -3, -4,
+      -3, -2, +1, +1, +1, +1, +1, -2, +1, +1, +1, +1, +1, -2, -3,
+      -2, +1, +1, +1, +1, -2, -2, -2, -2, -2, +1, +1, +1, +1, -2,
+      -2, +1, +1, +1, -2, -2, -2, -2, -2, -2, -2, +1, +1, +1, -2,
+      +1, +1, +1, -2, -2, -2, +1, +1, +1, -2, -2, -2, +1, +1, +1,
+      +1, +1, +1, -2, -2, +1, +1, +1, +1, +1, -2, -2, +1, +1, +1,
+      +1, +1, -2, -2, -2, +1, +1, +1, +1, +1, -2, -2, -2, +1, +1,
+      +1, +1, +1, -2, -2, +1, +1, +1, +1, +1, -2, -2, +1, +1, +1,
+      +1, +1, +1, -2, -2, -2, +1, +1, +1, -2, -2, -2, +1, +1, +1,
+      -2, +1, +1, +1, -2, -2, -2, -2, -2, -2, -2, +1, +1, +1, -2,
+      -2, +1, +1, +1, +1, -2, -2, -2, -2, -2, +1, +1, +1, +1, -2,
+      -3, -2, +1, +1, +1, +1, +1, -2, +1, +1, +1, +1, +1, -2, -3,
+      -4, -3, -2, +1, +1, +1, +1, +1, +1, +1, +1, +1, -2, -3, -4,
+      -4, -4, -3, -2, -2, +1, +1, +1, +1, +1, -2, -2, -3, -4, -4
+    ];
   }
 
   start() {
@@ -142,25 +172,8 @@ class BobRossAr {
     // this.renderCtx.putImageData(colorEdges, 0, 0);
 
     // template match for circles
-    const quarterCircle = [
-      -4, -4, -3, -2, -2, +1, +1, +1, +1, +1, -2, -2, -3, -4, -4,
-      -4, -3, -2, +1, +1, +1, +1, +1, +1, +1, +1, +1, -2, -3, -4,
-      -3, -2, +1, +1, +1, +1, +1, -2, +1, +1, +1, +1, +1, -2, -3,
-      -2, +1, +1, +1, +1, -2, -2, -2, -2, -2, +1, +1, +1, +1, -2,
-      -2, +1, +1, +1, -2, -2, -2, -2, -2, -2, -2, +1, +1, +1, -2,
-      +1, +1, +1, -2, -2, -2, +1, +1, +1, -2, -2, -2, +1, +1, +1,
-      +1, +1, +1, -2, -2, +1, +1, +1, +1, +1, -2, -2, +1, +1, +1,
-      +1, +1, -2, -2, -2, +1, +1, +1, +1, +1, -2, -2, -2, +1, +1,
-      +1, +1, +1, -2, -2, +1, +1, +1, +1, +1, -2, -2, +1, +1, +1,
-      +1, +1, +1, -2, -2, -2, +1, +1, +1, -2, -2, -2, +1, +1, +1,
-      -2, +1, +1, +1, -2, -2, -2, -2, -2, -2, -2, +1, +1, +1, -2,
-      -2, +1, +1, +1, +1, -2, -2, -2, -2, -2, +1, +1, +1, +1, -2,
-      -3, -2, +1, +1, +1, +1, +1, -2, +1, +1, +1, +1, +1, -2, -3,
-      -4, -3, -2, +1, +1, +1, +1, +1, +1, +1, +1, +1, -2, -3, -4,
-      -4, -4, -3, -2, -2, +1, +1, +1, +1, +1, -2, -2, -3, -4, -4
-    ];
     const result = BobRossAr.applyBinaryFilter(
-      edges, this.width, this.height, quarterCircle, 15, 15, 30
+      edges, this.width, this.height, this.TEMPLATE, 15, 15, 30, 0
     );
     this.renderCtx.strokeStyle = 'red';
     for (let i = 0; i < result.length; i++) {
@@ -176,9 +189,9 @@ class BobRossAr {
   //   w -- width of the image implied by uint8_arr
   //   h -- height " ... "
   //   kernel -- the kernel to apply
-  //   kw --- kernel width; must be odd
-  //   kh --- kernel height; must be odd
-  //   thresh --- the activation threshold
+  //   kw -- kernel width; must be odd
+  //   kh -- kernel height; must be odd
+  //   thresh -- the activation threshold
   // postconditions:
   //   returns Uint8Array of the filter results
   static applyBinaryFilter(uint8_arr, w, h, kernel, kw, kh, thresh) { 
