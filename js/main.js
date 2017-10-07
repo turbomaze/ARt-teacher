@@ -143,6 +143,11 @@ class BobRossAr {
           self.renderCtx.fillText(duration + 'ms', 10, fontSize);
           self.time += duration;
           self.frames += 1;
+          if (self.frames % (5 * self.fps) === 0) {
+            console.log(
+              "Average of " + self.time / self.frames + "ms per frame"
+            );
+          }
         }, 1000 / self.fps);
       },
       false
@@ -165,59 +170,61 @@ class BobRossAr {
   process() {
     const self = this;
 
-    // find new faces
-    const newFaces = this.detector.detect(this.video, 1).map((face) => {
-      const widthMultiplier = self.video.videoWidth / self.detector.canvas.width;
-      const heightMultiplier = self.video.videoHeight / self.detector.canvas.height;
-  		// Rescale coordinates from detector to video coordinate space:
-      return {
-        x: face[0] * widthMultiplier,
-        y: face[1] * heightMultiplier,
-        width: face[2] * widthMultiplier,
-        height: face[3] * heightMultiplier,
-        confidence: face[4],
-      };
-    }).filter(face => {
-      return face.confidence > 4;
-    });
+    if (this.frames % 2 === 0) {
+      // find new faces
+      const newFaces = this.detector.detect(this.video, 1).map((face) => {
+        const widthMultiplier = self.video.videoWidth / self.detector.canvas.width;
+        const heightMultiplier = self.video.videoHeight / self.detector.canvas.height;
+  	  	// Rescale coordinates from detector to video coordinate space:
+        return {
+          x: face[0] * widthMultiplier,
+          y: face[1] * heightMultiplier,
+          width: face[2] * widthMultiplier,
+          height: face[3] * heightMultiplier,
+          confidence: face[4],
+        };
+      }).filter(face => {
+        return face.confidence > 4;
+      });
 
-    // match the new faces to the old faces
-    const faceMatchThresh = 80;
-    const matchedIds = {};
-    let addedNewFace = false;
-    const matchedFaces = newFaces.map(face => {
-      const closestFace = self.getClosestExistingFace(face);
-      if (closestFace.distance < faceMatchThresh) {
-        face.id = closestFace.id;
-        face.blocked = closestFace.blocked;
-        matchedIds[face.id] = true;
-      } else {
-        face.id = Math.random().toString();
-        addedNewFace = true;
-      }
-      return face;
-    });
+      // match the new faces to the old faces
+      const faceMatchThresh = 80;
+      const matchedIds = {};
+      let addedNewFace = false;
+      const matchedFaces = newFaces.map(face => {
+        const closestFace = self.getClosestExistingFace(face);
+        if (closestFace.distance < faceMatchThresh) {
+          face.id = closestFace.id;
+          face.blocked = closestFace.blocked;
+          matchedIds[face.id] = true;
+        } else {
+          face.id = Math.random().toString();
+          addedNewFace = true;
+        }
+        return face;
+      });
 
-    // collect all the faces into an organized updated set
-    const allFaces = matchedFaces;
-    const maxStale = 2;
-    this.faces.forEach(face => {
-      if (!(face.id in matchedIds)) {
-        if (face.hasOwnProperty('staleness')) {
-          if (face.staleness > maxStale) {
-            // don't add it
+      // collect all the faces into an organized updated set
+      const allFaces = matchedFaces;
+      const maxStale = 2;
+      this.faces.forEach(face => {
+        if (!(face.id in matchedIds)) {
+          if (face.hasOwnProperty('staleness')) {
+            if (face.staleness > maxStale) {
+              // don't add it
+            } else {
+              // add it with increased staleness
+              face.staleness += 1;
+              allFaces.push(face);
+            }
           } else {
-            // add it with increased staleness
-            face.staleness += 1;
+            face.staleness = 1;
             allFaces.push(face);
           }
-        } else {
-          face.staleness = 1;
-          allFaces.push(face);
         }
-      }
-    });
-    this.faces = allFaces;
+      });
+      this.faces = allFaces;
+    }
 
     this.renderCtx.strokeStyle = 'red';
     for (let i = 0; i < this.faces.length; i++) {
