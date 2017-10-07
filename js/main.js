@@ -1,16 +1,13 @@
 class BobRossAr {
   static init() {
     const bobRossAr = new BobRossAr(
-      1280, 720,
+      640, 360,
       15,
       document.getElementById("camera"),
       document.getElementById("render")
     );
-    document.getElementById("render").style.display = "none";
 
-    // document.body.addEventListener("click", () => {
     bobRossAr.start();
-    // });
   }
 
   static registerVideoHandlers(width, height, streamCb, errCb) {
@@ -78,6 +75,8 @@ class BobRossAr {
           self.renderCtx.fillRect(0, 0, self.width, self.height);
           self.renderCtx.drawImage(self.video, 0, 0, self.width, self.height);
 
+          self.process();
+
           const duration = +new Date() - start;
           self.time += duration;
           self.frames += 1;
@@ -98,6 +97,20 @@ class BobRossAr {
       },
       err => alert("Oops: " + err.code + ")")
     );
+  }
+
+  process() {
+    const self = this;
+    const data = this.renderCtx.getImageData(0, 0, this.renderCanvas.width, this.renderCanvas.height);
+    for (let y = 0; y < this.renderCanvas.height; y++) {
+      for (let x = 0; x < this.renderCanvas.width; x++) {
+        const i = 4 * (y * this.renderCanvas.width + x);
+        data.data[i + 0] = data.data[i + 0];
+        data.data[i + 1] = data.data[i + 0];
+        data.data[i + 2] = data.data[i + 0];
+      }
+    }
+    this.renderCtx.putImageData(data, 0, 0);
   }
 }
 
