@@ -114,8 +114,10 @@ class BobRossAr {
       }
     }
 
-    // horizontal edges
-    const edges = this.renderCtx.createImageData(this.width, this.height);
+    // edges
+    const colorEdges = this.renderCtx.createImageData(this.width, this.height);
+    const edges = new Uint8Array(this.width * this.height);
+    const thresh = 5;
     for (let y = 1; y < this.height - 1; y++) {
       for (let x = 1; x < this.width - 1; x++) {
         // implied kernel: [-1, 0, 1]
@@ -126,14 +128,78 @@ class BobRossAr {
         const il = 4 * (y * this.width + x - 1);
         const xdiff = data.data[ir + 0] - data.data[il + 0];
         const ydiff = data.data[it + 0] - data.data[ib + 0];
-        const color = (xdiff > 10 || ydiff > 10) ? 255 : 0;
-        edges.data[i + 0] = color;
-        edges.data[i + 1] = color;
-        edges.data[i + 2] = color;
-        edges.data[i + 3] = 255;
+        const isEdge = xdiff > thresh || ydiff > thresh;
+        const color = isEdge ? 255 : 0;
+        edges[i / 4] = +isEdge;
+        colorEdges.data[i + 0] = color;
+        colorEdges.data[i + 1] = color;
+        colorEdges.data[i + 2] = color;
+        colorEdges.data[i + 3] = 255;
       }
     }
-    this.renderCtx.putImageData(edges, 0, 0);
+
+    // render the edges
+    // this.renderCtx.putImageData(colorEdges, 0, 0);
+
+    // template match for circles
+    const quarterCircle = [
+      -4, -4, -3, -2, -2, +1, +1, +1, +1, +1, -2, -2, -3, -4, -4,
+      -4, -3, -2, +1, +1, +1, +1, +1, +1, +1, +1, +1, -2, -3, -4,
+      -3, -2, +1, +1, +1, +1, +1, -2, +1, +1, +1, +1, +1, -2, -3,
+      -2, +1, +1, +1, +1, -2, -2, -2, -2, -2, +1, +1, +1, +1, -2,
+      -2, +1, +1, +1, -2, -2, -2, -2, -2, -2, -2, +1, +1, +1, -2,
+      +1, +1, +1, -2, -2, -2, +1, +1, +1, -2, -2, -2, +1, +1, +1,
+      +1, +1, +1, -2, -2, +1, +1, +1, +1, +1, -2, -2, +1, +1, +1,
+      +1, +1, -2, -2, -2, +1, +1, +1, +1, +1, -2, -2, -2, +1, +1,
+      +1, +1, +1, -2, -2, +1, +1, +1, +1, +1, -2, -2, +1, +1, +1,
+      +1, +1, +1, -2, -2, -2, +1, +1, +1, -2, -2, -2, +1, +1, +1,
+      -2, +1, +1, +1, -2, -2, -2, -2, -2, -2, -2, +1, +1, +1, -2,
+      -2, +1, +1, +1, +1, -2, -2, -2, -2, -2, +1, +1, +1, +1, -2,
+      -3, -2, +1, +1, +1, +1, +1, -2, +1, +1, +1, +1, +1, -2, -3,
+      -4, -3, -2, +1, +1, +1, +1, +1, +1, +1, +1, +1, -2, -3, -4,
+      -4, -4, -3, -2, -2, +1, +1, +1, +1, +1, -2, -2, -3, -4, -4
+    ];
+    const result = BobRossAr.applyBinaryFilter(
+      edges, this.width, this.height, quarterCircle, 15, 15, 30
+    );
+    this.renderCtx.strokeStyle = 'red';
+    for (let i = 0; i < result.length; i++) {
+      if (result[i]) {
+        const x = i % this.width;
+        const y = Math.floor(i / this.width);
+        this.renderCtx.strokeRect(x - 7, y - 7, 15, 15);
+      }
+    }
+  }
+
+  // preconditions:
+  //   w -- width of the image implied by uint8_arr
+  //   h -- height " ... "
+  //   kernel -- the kernel to apply
+  //   kw --- kernel width; must be odd
+  //   kh --- kernel height; must be odd
+  //   thresh --- the activation threshold
+  // postconditions:
+  //   returns Uint8Array of the filter results
+  static applyBinaryFilter(uint8_arr, w, h, kernel, kw, kh, thresh) { 
+    const kw_off = Math.floor(kw / 2);
+    const kh_off = Math.floor(kw / 2);
+    const result = new Uint8Array(w * h);
+    for (let y = kh_off; y < h - kh_off; y++) {
+      for (let x = kw_off; x < w - kw_off; x++) {
+        const i = y * w + x;
+        let sum = 0;
+        // convolve the kernel with the image
+        for (let ky = 0; ky < kh; ky++) {
+          for (let kx = 0; kx < kw; kx++) {
+            const ki = (y + ky - kh_off) * w + (x + kx - kw_off);
+            sum += uint8_arr[ki] * kernel[ky * kh + kx];
+          }
+        }
+        result[i] = sum > thresh ? 1 : 0;
+      }
+    }
+    return result;
   }
 }
 
