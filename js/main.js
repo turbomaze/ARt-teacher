@@ -51,7 +51,7 @@ class BobRossAr {
     this.frames = 0;
 
     // objectdetect stuff
-    const detectorSize = 120;
+    const detectorSize = 80;
     this.smoother = new Smoother(
       [0.9999999, 0.9999999, 0.999, 0.999],
       [0, 0, 0, 0]
@@ -59,7 +59,7 @@ class BobRossAr {
     this.detector = new objectdetect.detector(
       detectorSize * (this.width / this.height),
       detectorSize,
-      1.1,
+      1.5,
       objectdetect.frontalface_alt
     );
   }
@@ -95,6 +95,10 @@ class BobRossAr {
           self.process();
 
           const duration = +new Date() - start;
+          const fontSize = 32;
+          self.renderCtx.font = fontSize + "px Arial";
+          self.renderCtx.fillStyle = "black";
+          self.renderCtx.fillText(duration + "ms", 10, fontSize);
           self.time += duration;
           self.frames += 1;
         }, 1000 / self.fps);
