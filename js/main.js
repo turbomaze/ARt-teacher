@@ -51,7 +51,7 @@ class BobRossAr {
     this.frames = 0;
 
     // objectdetect stuff
-    const detectorSize = 80;
+    const detectorSize = 120;
     this.smoother = new Smoother(
       [0.9999999, 0.9999999, 0.999, 0.999],
       [0, 0, 0, 0]
@@ -59,7 +59,7 @@ class BobRossAr {
     this.detector = new objectdetect.detector(
       detectorSize * (this.width / this.height),
       detectorSize,
-      1.5,
+      3,
       objectdetect.frontalface_alt
     );
   }
