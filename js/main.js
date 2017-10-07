@@ -94,7 +94,7 @@ class BobRossAr {
     // objectdetect stuff
     const detectorSize = 120;
     this.smoother = new Smoother(
-      [0.9, 0.9, 0.9, 0.9],
+      [0.8, 0.8, 0.6, 0.6],
       [0, 0, 0, 0]
     );
     this.detector = new objectdetect.detector(
@@ -103,6 +103,7 @@ class BobRossAr {
       1.5,
       objectdetect.frontalface_alt
     );
+    this.faces = [];
   }
 
   start() {
@@ -163,7 +164,9 @@ class BobRossAr {
 
   process() {
     const self = this;
-    const faces = this.detector.detect(this.video, 1).map((face) => {
+
+    // find new faces
+    const newFaces = this.detector.detect(this.video, 1).map((face) => {
       const widthMultiplier = self.video.videoWidth / self.detector.canvas.width;
       const heightMultiplier = self.video.videoHeight / self.detector.canvas.height;
   		// Rescale coordinates from detector to video coordinate space:
@@ -175,44 +178,75 @@ class BobRossAr {
         confidence: face[4],
       };
     }).filter(face => {
-      return face.confidence > 0;
+      return face.confidence > 4;
     });
 
+    // match the new faces to the old faces
+    const faceMatchThresh = 80;
+    const matchedIds = {};
+    let addedNewFace = false;
+    const matchedFaces = newFaces.map(face => {
+      const closestFace = self.getClosestExistingFace(face);
+      if (closestFace.distance < faceMatchThresh) {
+        face.id = closestFace.id;
+        face.blocked = closestFace.blocked;
+        matchedIds[face.id] = true;
+      } else {
+        face.id = Math.random().toString();
+        addedNewFace = true;
+      }
+      return face;
+    });
+
+    // collect all the faces into an organized updated set
+    const allFaces = matchedFaces;
+    const maxStale = 2;
+    this.faces.forEach(face => {
+      if (!(face.id in matchedIds)) {
+        if (face.hasOwnProperty('staleness')) {
+          if (face.staleness > maxStale) {
+            // don't add it
+          } else {
+            // add it with increased staleness
+            face.staleness += 1;
+            allFaces.push(face);
+          }
+        } else {
+          face.staleness = 1;
+          allFaces.push(face);
+        }
+      }
+    });
+    this.faces = allFaces;
+
     this.renderCtx.strokeStyle = 'red';
-    for (let i = 0; i < faces.length; i++) {
-      const face = faces[i];
+    for (let i = 0; i < this.faces.length; i++) {
+      const face = this.faces[i];
       this.renderCtx.strokeRect(face.x, face.y, face.width, face.height);
     }
   }
 
-  // preconditions:
-  //   w -- width of the image implied by uint8_arr
-  //   h -- height " ... "
-  //   kernel -- the kernel to apply
-  //   kw -- kernel width; must be odd
-  //   kh -- kernel height; must be odd
-  //   thresh -- the activation threshold
-  // postconditions:
-  //   returns Uint8Array of the filter results
-  static applyBinaryFilter(uint8_arr, w, h, kernel, kw, kh, thresh) { 
-    const kw_off = Math.floor(kw / 2);
-    const kh_off = Math.floor(kw / 2);
-    const result = new Uint8Array(w * h);
-    for (let y = kh_off; y < h - kh_off; y++) {
-      for (let x = kw_off; x < w - kw_off; x++) {
-        const i = y * w + x;
-        let sum = 0;
-        // convolve the kernel with the image
-        for (let ky = 0; ky < kh; ky++) {
-          for (let kx = 0; kx < kw; kx++) {
-            const ki = (y + ky - kh_off) * w + (x + kx - kw_off);
-            sum += uint8_arr[ki] * kernel[ky * kh + kx];
-          }
-        }
-        result[i] = sum > thresh ? 1 : 0;
+  getClosestExistingFace(face) {
+    let bestDist = Infinity;
+    let bestId = false;
+    let bestBlocked = false;
+    this.faces.forEach(existingFace => {
+      const dist = Math.sqrt(
+        Math.pow(
+          (existingFace.x + existingFace.width/2) -
+          (face.x + face.width/2), 2
+        ) +
+        Math.pow(
+          (existingFace.y + existingFace.height/2) -
+          (face.y + face.height/2), 2
+        )
+      );
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestId = existingFace.id;
       }
-    }
-    return result;
+    });
+    return { id: bestId, distance: bestDist };
   }
 }
 
