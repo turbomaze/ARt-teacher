@@ -9,7 +9,7 @@ Developed at the Reality Virtually hackathon  on October 6-9, 2017.
 
 This project includes the following libraries:
 
-* [js-objectdetect](https://github.com/mtschirs/js-objectdetect) -- for face detection
+* [js-aruco](https://github.com/jcmellado/js-aruco) -- for marker detection
 
 ## License
 MIT License
