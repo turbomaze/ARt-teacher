@@ -224,27 +224,47 @@ class BobRossAr {
 
     // render the sketch
     if (this.markers.length > 0) {
-      // compute the offsets
+      // compute the rotation
       const pose = this.posit.pose(this.markers[0].corners.map(c => {
         const cornerCopy = JSON.parse(JSON.stringify(c));
         cornerCopy.x = cornerCopy.x - (self.width / 2);
         cornerCopy.y = cornerCopy.y - (self.height / 2);
         return cornerCopy;
       }));
-      const xOff = this.markers[0].corners[3].x;
-      const yOff = this.markers[0].corners[3].y;
-      const paperW = 400;
-      const paperH = 300;
+      const corners = this.markers[0].corners;
+      const theta = Math.atan(
+        (corners[0].x - corners[1].x) / (corners[0].y - corners[1].y)
+      );
+      const negativePhi = BobRossAr.getDist(corners[0], corners[3]) >
+        BobRossAr.getDist(corners[1], corners[2]);
+      const phi = (negativePhi ? -0.25 : 0.25) * Math.acos(
+        BobRossAr.getDist(
+          corners[2], corners[3]
+        ) / (BobRossAr.getDist(
+          corners[0], corners[3]
+        ) + 0.00001)
+      ) || 0;
 
       // render the rotated artwork onto the projector's canvas
-      this.projector.render();
+      this.projector.render(theta, -phi);
 
       // draw the projected image on the canvas
+      const xOff = corners[1].x;
+      const yOff = corners[1].y;
+      const paperW = 400;
+      const paperH = 300;
       this.renderCtx.drawImage(
         this.projectedCanvas, xOff, yOff,
         paperW, paperH
       );
     }
+  }
+
+  static getDist(a, b) {
+    return Math.sqrt(
+      Math.pow(a.x - b.x, 2) +
+      Math.pow(a.y - b.y, 2)
+    );
   }
 
   getClosestExistingMarker(marker) {

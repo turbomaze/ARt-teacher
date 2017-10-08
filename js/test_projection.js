@@ -1,9 +1,12 @@
 class BobRossArProjection {
   constructor() {
     this.scene = new THREE.Scene();
-    const light = new THREE.DirectionalLight( 0xffffff );
-    light.position.set( 0, 1, 1 ).normalize();
-    this.scene.add(light);
+    const light1 = new THREE.DirectionalLight( 0xdddddd );
+    light1.position.set( 0, 1, 1 ).normalize();
+    this.scene.add(light1);
+    const light2 = new THREE.DirectionalLight( 0xdddddd );
+    light2.position.set( 0, -1, 1 ).normalize();
+    this.scene.add(light2);
 
     this.camera = new THREE.PerspectiveCamera(
       70, window.innerWidth / window.innerHeight, 1, 1000
@@ -16,7 +19,7 @@ class BobRossArProjection {
     material.transparent = true;
     this.mesh = new THREE.Mesh(geometry, material);
     this.mesh.position.z = -5;
-    this.mesh.rotation.x = (Math.PI / 180) * -20.0 * 0;
+    this.mesh.rotation.x = (Math.PI / 180) * 0.0;
     this.mesh.rotation.y = (Math.PI / 180) * 0.0;
     this.mesh.rotation.z = (Math.PI / 180) * 0.0;
     this.scene.add(this.mesh);
@@ -28,7 +31,9 @@ class BobRossArProjection {
     document.body.appendChild(this.renderer.domElement);
   }
 
-  render() {
+  render(theta, phi) {
+    this.mesh.rotation.z = theta;
+    this.mesh.rotation.x = phi;
     this.renderer.render(this.scene, this.camera);
   }
 }
