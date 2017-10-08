@@ -20,14 +20,15 @@ class BobRossArProjection {
     this.index = 0;
     this.textures = [];
     for (let i = 0; i < 6; i++) {
-      const texture = THREE.ImageUtils.loadTexture('images/'+NAME+(i + 1)+'.png');
+      // const texture = THREE.ImageUtils.loadTexture('images/'+NAME+(i + 1)+'.png');
+      const texture = THREE.ImageUtils.loadTexture('images/MINION-pink.png');
       this.textures.push(texture);
     }
     this.material = new THREE.MeshPhongMaterial({map: this.textures[this.index]});
     this.material.transparent = true;
 
-    const www = 14;
-    const hhh = 9;
+    const www = 17;
+    const hhh = 12;
     const geometry2 = new THREE.CubeGeometry(www, 0.01, hhh);
     geometry2.translate(www/2, 0, hhh/2);
     this.mesh2 = new THREE.Mesh(geometry2, this.material);
@@ -56,9 +57,9 @@ class BobRossArProjection {
       this.mesh2.material.needsUpdate = true;
     }
 
-    const k1 = -1 / 15; // horizontal constant
+    const k1 = -1 / 25; // horizontal constant
     const k2 = 12.9; // size constant
-    const k3 = -1 / 13; // vertical constant
+    const k3 = -1 / 23; // vertical constant
     const camX = k1 * (corners[0].x - (WIDTH/2));
     const area = Math.pow(getArea(corners), 0.25);
     const camY = 63.4 - 7.45 * area + 0.2427 * area * area;
