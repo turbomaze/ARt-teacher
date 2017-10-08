@@ -28,7 +28,6 @@ class BobRossArProjection {
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.setSize(732, 411);
     this.renderer.domElement.id = 'projected-image';
-    document.body.appendChild(this.renderer.domElement);
   }
 
   render(theta, phi) {

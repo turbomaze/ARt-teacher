@@ -90,7 +90,8 @@ class BobRossAr {
     this.video = video;
     this.renderCanvas = renderCanvas;
     this.renderCtx = this.renderCanvas.getContext('2d');
-    this.projectedCanvas = document.getElementById('projected-image');
+    document.body.appendChild(this.projector.renderer.domElement);
+    this.projectedCanvas = this.projector.renderer.domElement;
     this.isFullScreen = false;
     this.isStreaming = false;
     this.width = width;
