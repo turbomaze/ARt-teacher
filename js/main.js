@@ -212,14 +212,15 @@ class BobRossAr {
     // detect the markers
     this.markers.map(marker => {
       const corners = marker.corners;
-      this.renderCtx.fillStyle = 'red';
+      this.renderCtx.lineWidth = 3;
+      this.renderCtx.strokeStyle = 'red';
       this.renderCtx.beginPath();
       this.renderCtx.moveTo(corners[0].x, corners[0].y);
       this.renderCtx.lineTo(corners[1].x, corners[1].y);
       this.renderCtx.lineTo(corners[2].x, corners[2].y);
       this.renderCtx.lineTo(corners[3].x, corners[3].y);
       this.renderCtx.closePath();
-      this.renderCtx.fill();
+      this.renderCtx.stroke();
       return marker;
     });
 
@@ -233,10 +234,10 @@ class BobRossAr {
         return cornerCopy;
       }));
       const corners = this.markers[0].corners;
-      const theta = Math.atan(
+      const theta = 0.6 * Math.atan(
         (corners[0].x - corners[1].x) / (corners[0].y - corners[1].y)
       );
-      const negativePhi = BobRossAr.getDist(corners[0], corners[3]) >
+      const negativePhi = BobRossAr.getDist(corners[0], corners[3]) <
         BobRossAr.getDist(corners[1], corners[2]);
       const phi = (negativePhi ? -0.25 : 0.25) * Math.acos(
         BobRossAr.getDist(
@@ -247,7 +248,7 @@ class BobRossAr {
       ) || 0;
 
       // render the rotated artwork onto the projector's canvas
-      this.projector.render(theta, -phi);
+      this.projector.render(-theta, phi);
 
       // draw the projected image on the canvas
       const xOff = corners[1].x;

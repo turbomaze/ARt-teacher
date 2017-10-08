@@ -24,7 +24,7 @@ class BobRossArProjection {
     this.mesh.rotation.z = (Math.PI / 180) * 0.0;
     this.scene.add(this.mesh);
 
-    this.renderer = new THREE.WebGLRenderer({ alpha: !true });
+    this.renderer = new THREE.WebGLRenderer({ alpha: true });
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.setSize(732, 411);
     this.renderer.domElement.id = 'projected-image';
