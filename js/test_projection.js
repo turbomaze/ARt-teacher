@@ -1,5 +1,6 @@
 const WIDTH = 732;
 const HEIGHT = 411;
+const NAME = 'MINION-transparent_STEP';
 
 class BobRossArProjection {
   constructor() {
@@ -19,14 +20,14 @@ class BobRossArProjection {
     this.index = 0;
     this.textures = [];
     for (let i = 0; i < 6; i++) {
-      const texture = THREE.ImageUtils.loadTexture('images/minion_step_'+(i + 1)+'.PNG');
+      const texture = THREE.ImageUtils.loadTexture('images/'+NAME+(i + 1)+'.png');
       this.textures.push(texture);
     }
     this.material = new THREE.MeshPhongMaterial({map: this.textures[this.index]});
     this.material.transparent = true;
 
-    const www = 15;
-    const hhh = 10;
+    const www = 14;
+    const hhh = 9;
     const geometry2 = new THREE.CubeGeometry(www, 0.01, hhh);
     geometry2.translate(www/2, 0, hhh/2);
     this.mesh2 = new THREE.Mesh(geometry2, this.material);
