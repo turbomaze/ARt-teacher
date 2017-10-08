@@ -1,14 +1,14 @@
 class BobRossAr {
   static init() {
     const bobRossAr = new BobRossAr(
-      640, 360,
+      732, 411,
       15,
       document.getElementById('camera'),
       document.getElementById('render')
     );
     document.getElementById('render').style.display = 'none';
 
-    document.body.addEventListener('click', function() {
+    document.body.addEventListener('click', function(e) {
       if (!bobRossAr.isFullScreen) {
         if (document.location.hash !== '#desktop') {
           BobRossAr.forceFullScreen();
@@ -20,6 +20,7 @@ class BobRossAr {
         document.getElementById('render').style.display = 'block';
         document.getElementById('fullscreen-message').style.display = 'none';
       }
+      e.preventDefault();
     });
 
     if (!document.location.hash.startsWith('#desktop')) {

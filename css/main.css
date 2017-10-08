@@ -25,7 +25,7 @@ canvas {
 }
 
 #fullscreen-message h1 {
-	color: #0c0c0c;
+  color: #0c0c0c;
   display: table-cell;
   font-family: 'Audiowide', sans-serif;
   font-size: 2rem;
