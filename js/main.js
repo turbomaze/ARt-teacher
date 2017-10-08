@@ -81,6 +81,12 @@ class BobRossAr {
   }
 
   constructor(width, height, fps, video, renderCanvas) {
+    this.projector = new BobRossArProjection();
+
+    this.aruco = new AR.Detector();
+    this.posit = new POS.Posit(41, this.width); // 41mm markers
+    this.markers = [];
+
     this.video = video;
     this.renderCanvas = renderCanvas;
     this.renderCtx = this.renderCanvas.getContext('2d');
@@ -92,9 +98,6 @@ class BobRossAr {
     this.fps = fps;
     this.time = 0;
     this.frames = 0;
-
-    this.aruco = new AR.Detector();
-    this.markers = [];
   }
 
   start() {
@@ -221,10 +224,22 @@ class BobRossAr {
 
     // render the sketch
     if (this.markers.length > 0) {
+      // compute the offsets
+      const pose = this.posit.pose(this.markers[0].corners.map(c => {
+        const cornerCopy = JSON.parse(JSON.stringify(c));
+        cornerCopy.x = cornerCopy.x - (self.width / 2);
+        cornerCopy.y = cornerCopy.y - (self.height / 2);
+        return cornerCopy;
+      }));
       const xOff = this.markers[0].corners[3].x;
       const yOff = this.markers[0].corners[3].y;
       const paperW = 400;
       const paperH = 300;
+
+      // render the rotated artwork onto the projector's canvas
+      this.projector.render();
+
+      // draw the projected image on the canvas
       this.renderCtx.drawImage(
         this.projectedCanvas, xOff, yOff,
         paperW, paperH
