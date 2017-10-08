@@ -3,6 +3,11 @@
   padding: 0;
 }
 
+body {
+  position: relative;
+  width: 100vw; !important
+}
+
 video {
   display: none;
 }
