@@ -84,6 +84,7 @@ class BobRossAr {
     this.video = video;
     this.renderCanvas = renderCanvas;
     this.renderCtx = this.renderCanvas.getContext('2d');
+    this.projectedCanvas = document.getElementById('projected-image');
     this.isFullScreen = false;
     this.isStreaming = false;
     this.width = width;
@@ -230,9 +231,6 @@ class BobRossAr {
     }
 
     if (this.faces.length >= 3) {
-      console.log(this.faces.map(a => {
-        return {x: a.x, y: a.y};
-      }));
       // identify the faces
       const rightFace = this.faces.sort((a, b) => {
         return b.x - a.x;
@@ -252,14 +250,22 @@ class BobRossAr {
       const yOff = (botFace.y - topFace.y) * 2 / 3.9 + topFace.y;
       const paperW = (rightFace.x - topFace.x) * 7.2 / 5;
       const paperH = (botFace.y - topFace.y) * 4.7 / 3.9;
-      this.renderCtx.fillStyle = 'red';
-      this.renderCtx.beginPath();
-      this.renderCtx.moveTo(xOff, yOff);
-      this.renderCtx.lineTo(xOff + paperW, yOff);
-      this.renderCtx.lineTo(xOff + paperW, yOff + paperH);
-      this.renderCtx.lineTo(xOff, yOff + paperH);
-      this.renderCtx.closePath();
-      this.renderCtx.fill();
+
+      if (false) {
+        this.renderCtx.fillStyle = 'red';
+        this.renderCtx.beginPath();
+        this.renderCtx.moveTo(xOff, yOff);
+        this.renderCtx.lineTo(xOff + paperW, yOff);
+        this.renderCtx.lineTo(xOff + paperW, yOff + paperH);
+        this.renderCtx.lineTo(xOff, yOff + paperH);
+        this.renderCtx.closePath();
+        this.renderCtx.fill();
+      } else {
+        this.renderCtx.drawImage(
+          this.projectedCanvas, xOff, yOff,
+          paperW, paperH
+        );
+      }
     }
 
     // box the faces
