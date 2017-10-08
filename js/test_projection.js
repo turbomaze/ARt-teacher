@@ -39,7 +39,7 @@ class BobRossArProjection {
     this.renderer.domElement.id = 'projected-image';
   }
 
-  render(corners, theta) {
+  render(corners, theta, idx) {
     function getArea(cs) {
       return Math.abs(
         (cs[0].x * cs[1].y - cs[0].y * cs[1].x) +
@@ -49,9 +49,8 @@ class BobRossArProjection {
       ) / 2;
     }
 
-    const newIndex = Math.floor(6 * Math.random());
-    if (this.index !== newIndex) {
-      this.index = newIndex;
+    if (this.index !== idx) {
+      this.index = idx;
       this.mesh2.material.map = this.textures[this.index];
       this.mesh2.material.needsUpdate = true;
     }

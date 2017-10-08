@@ -19,6 +19,8 @@ class BobRossAr {
         bobRossAr.start();
         document.getElementById('render').style.display = 'block';
         document.getElementById('fullscreen-message').style.display = 'none';
+      } else {
+        bobRossAr.index = (bobRossAr.index + 1) % 6;
       }
       e.preventDefault();
     });
@@ -86,6 +88,7 @@ class BobRossAr {
     this.aruco = new AR.Detector();
     this.posit = new POS.Posit(41, this.width); // 41mm markers
     this.markers = [];
+    this.index = 0;
 
     this.video = video;
     this.renderCanvas = renderCanvas;
@@ -240,7 +243,7 @@ class BobRossAr {
       );
 
       // render the rotated artwork onto the projector's canvas
-      this.projector.render(corners, theta);
+      this.projector.render(corners, theta, this.index);
 
       // draw the projected image on the canvas
       this.renderCtx.drawImage(
