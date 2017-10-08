@@ -247,16 +247,18 @@ class BobRossAr {
         return (a.x + a.y) - (b.x + b.y);
       })[0];
       const lastFace = {x: rightFace.x, y: botFace.y};
+      const xOff = (rightFace.x - topFace.x) * 2 / 5 + topFace.x;
+      const yOff = (botFace.y - topFace.y) * 2 / 3.9 + topFace.y;
+      const paperW = (rightFace.x - topFace.x) * 7.2 / 5;
+      const paperH = (botFace.y - topFace.y) * 4.7 / 3.9;
       this.renderCtx.fillStyle = 'red';
       this.renderCtx.beginPath();
-      this.renderCtx.moveTo(topFace.x, topFace.y);
-      this.renderCtx.lineTo(rightFace.x, rightFace.y);
-      this.renderCtx.lineTo(lastFace.x, lastFace.y);
-      this.renderCtx.lineTo(botFace.x, botFace.y);
+      this.renderCtx.moveTo(xOff, yOff);
+      this.renderCtx.lineTo(xOff + paperW, yOff);
+      this.renderCtx.lineTo(xOff + paperW, yOff + paperH);
+      this.renderCtx.lineTo(xOff, yOff + paperH);
       this.renderCtx.closePath();
       this.renderCtx.fill();
-
-      // this.faces = [topFace, botFace, rightFace];
     }
 
     // box the faces
