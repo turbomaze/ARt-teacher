@@ -21,7 +21,7 @@ function init() {
     scene.add(light);
   
     var geometry = new THREE.CubeGeometry(7.2, 4.7, 0.1);
-    var material = new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture('images/MINION.png') } );
+    var material = new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture('images/MINION-transparent.png') } );
     material.transparent = true;
  
     mesh = new THREE.Mesh(geometry, material );
