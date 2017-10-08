@@ -93,19 +93,8 @@ class BobRossAr {
     this.time = 0;
     this.frames = 0;
 
-    // objectdetect stuff
-    const detectorSize = 120;
-    this.smoother = new Smoother(
-      [0.8, 0.8, 0.8, 0.8],
-      [0, 0, 0, 0]
-    );
-    this.detector = new objectdetect.detector(
-      detectorSize * (this.width / this.height),
-      detectorSize,
-      1.5,
-      objectdetect.frontalface_alt
-    );
-    this.faces = [];
+    this.aruco = new AR.Detector();
+    this.markers = [];
   }
 
   start() {
@@ -174,126 +163,87 @@ class BobRossAr {
 
     const computeEveryNFrames = 1;
     if (this.frames % computeEveryNFrames === 0) {
-      // find new faces
-      const newFaces = this.detector.detect(this.video, 1).map((face) => {
-        const widthMultiplier = self.video.videoWidth / self.detector.canvas.width;
-        const heightMultiplier = self.video.videoHeight / self.detector.canvas.height;
-  	  	// Rescale coordinates from detector to video coordinate space:
-        return {
-          x: face[0] * widthMultiplier,
-          y: face[1] * heightMultiplier,
-          width: face[2] * widthMultiplier,
-          height: face[3] * heightMultiplier,
-          confidence: face[4],
-        };
-      }).filter(face => {
-        return face.confidence > 3;
-      });
+      // detect new markers
+      const newMarkers = this.aruco.detect(
+        this.renderCtx.getImageData(0, 0, this.width, this.height)
+      );
 
-      // match the new faces to the old faces
-      const faceMatchThresh = 80;
+      // match the new markers to the old markers
+      const matchThresh = 30;
       const matchedIds = {};
-      let addedNewFace = false;
-      const matchedFaces = newFaces.map(face => {
-        const closestFace = self.getClosestExistingFace(face);
-        if (closestFace.distance < faceMatchThresh) {
-          face.id = closestFace.id;
-          face.blocked = closestFace.blocked;
-          matchedIds[face.id] = true;
+      const matchedMarkers = newMarkers.map(marker => {
+        const closestMarker = self.getClosestExistingMarker(marker);
+        if (closestMarker.distance < matchThresh) {
+          marker.id = closestMarker.id;
+          matchedIds[marker.id] = true;
         } else {
-          face.id = Math.random().toString();
-          addedNewFace = true;
+          marker.id = Math.random().toString();
         }
-        return face;
+        return marker;
       });
 
-      // collect all the faces into an organized updated set
-      const allFaces = matchedFaces;
+      // collect all the markers into an organized updated set
+      const allMarkers = matchedMarkers;
       const maxStale = 4;
-      this.faces.forEach(face => {
-        if (!(face.id in matchedIds)) {
-          if (face.hasOwnProperty('staleness')) {
-            if (face.staleness > maxStale) {
+      this.markers.forEach(marker => {
+        if (!(marker.id in matchedIds)) {
+          if (marker.hasOwnProperty('staleness')) {
+            if (marker.staleness > maxStale) {
               // don't add it
             } else {
               // add it with increased staleness
-              face.staleness += 1;
-              allFaces.push(face);
+              marker.staleness += 1;
+              allMarkers.push(marker);
             }
           } else {
-            face.staleness = 1;
-            allFaces.push(face);
+            marker.staleness = 1;
+            allMarkers.push(marker);
           }
         }
       });
 
-      this.faces = allFaces;
+      this.markers = allMarkers;
     }
 
-    if (this.faces.length >= 3) {
-      // identify the faces
-      const rightFace = this.faces.sort((a, b) => {
-        return b.x - a.x;
-      })[0];
-      const botFace = this.faces.filter(a => {
-        return a.id !== rightFace.id;
-      }).sort((a, b) => {
-        return a.y - b.y;
-      })[1];
-      const topFace = this.faces.filter(a => {
-        return a.id !== rightFace.id && a.id !== botFace.id;
-      }).sort((a, b) => {
-        return (a.x + a.y) - (b.x + b.y);
-      })[0];
-      const lastFace = {x: rightFace.x, y: botFace.y};
-      const xOff = (rightFace.x - topFace.x) * 2 / 5 + topFace.x;
-      const yOff = (botFace.y - topFace.y) * 2 / 3.9 + topFace.y;
-      const paperW = (rightFace.x - topFace.x) * 7.2 / 5;
-      const paperH = (botFace.y - topFace.y) * 4.7 / 3.9;
+    // detect the markers
+    this.markers.map(marker => {
+      const corners = marker.corners;
+      this.renderCtx.fillStyle = 'red';
+      this.renderCtx.beginPath();
+      this.renderCtx.moveTo(corners[0].x, corners[0].y);
+      this.renderCtx.lineTo(corners[1].x, corners[1].y);
+      this.renderCtx.lineTo(corners[2].x, corners[2].y);
+      this.renderCtx.lineTo(corners[3].x, corners[3].y);
+      this.renderCtx.closePath();
+      this.renderCtx.fill();
+      return marker;
+    });
 
-      if (false) {
-        this.renderCtx.fillStyle = 'red';
-        this.renderCtx.beginPath();
-        this.renderCtx.moveTo(xOff, yOff);
-        this.renderCtx.lineTo(xOff + paperW, yOff);
-        this.renderCtx.lineTo(xOff + paperW, yOff + paperH);
-        this.renderCtx.lineTo(xOff, yOff + paperH);
-        this.renderCtx.closePath();
-        this.renderCtx.fill();
-      } else {
-        this.renderCtx.drawImage(
-          this.projectedCanvas, xOff, yOff,
-          paperW, paperH
-        );
-      }
-    }
-
-    // box the faces
-    this.renderCtx.strokeStyle = 'red';
-    for (let i = 0; i < this.faces.length; i++) {
-      const face = this.faces[i];
-      this.renderCtx.strokeRect(face.x, face.y, face.width, face.height);
+    // render the sketch
+    if (this.markers.length > 0) {
+      const xOff = this.markers[0].corners[3].x;
+      const yOff = this.markers[0].corners[3].y;
+      const paperW = 400;
+      const paperH = 300;
+      this.renderCtx.drawImage(
+        this.projectedCanvas, xOff, yOff,
+        paperW, paperH
+      );
     }
   }
 
-  getClosestExistingFace(face) {
+  getClosestExistingMarker(marker) {
     let bestDist = Infinity;
     let bestId = false;
     let bestBlocked = false;
-    this.faces.forEach(existingFace => {
+    this.markers.forEach(existingMarker => {
       const dist = Math.sqrt(
-        Math.pow(
-          (existingFace.x + existingFace.width/2) -
-          (face.x + face.width/2), 2
-        ) +
-        Math.pow(
-          (existingFace.y + existingFace.height/2) -
-          (face.y + face.height/2), 2
-        )
+        Math.pow(existingMarker.corners[0].x - marker.corners[0].x, 2) +
+        Math.pow(existingMarker.corners[0].y - marker.corners[0].y, 2)
       );
       if (dist < bestDist) {
         bestDist = dist;
-        bestId = existingFace.id;
+        bestId = existingMarker.id;
       }
     });
     return { id: bestId, distance: bestDist };
