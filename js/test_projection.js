@@ -16,18 +16,20 @@ class BobRossArProjection {
 
     // reference
     const geometry = new THREE.CubeGeometry(4, 0.01, 4);
-    const texture = THREE.ImageUtils.loadTexture('images/MINION-transparent.png');
-    const material = new THREE.MeshPhongMaterial({map: texture});
-    material.transparent = true;
-    // this.mesh = new THREE.Mesh(geometry, material);
-    // this.mesh.position.set(0.5, 0, -7);
-    // this.scene.add(this.mesh);
+    this.index = 0;
+    this.textures = [];
+    for (let i = 0; i < 6; i++) {
+      const texture = THREE.ImageUtils.loadTexture('images/minion_step_'+(i + 1)+'.PNG');
+      this.textures.push(texture);
+    }
+    this.material = new THREE.MeshPhongMaterial({map: this.textures[this.index]});
+    this.material.transparent = true;
 
     const www = 15;
     const hhh = 10;
     const geometry2 = new THREE.CubeGeometry(www, 0.01, hhh);
     geometry2.translate(www/2, 0, hhh/2);
-    this.mesh2 = new THREE.Mesh(geometry2, material);
+    this.mesh2 = new THREE.Mesh(geometry2, this.material);
     this.mesh2.position.set(0.5 + 2, 0, -7 + 2);
     this.scene.add(this.mesh2);
 
@@ -47,6 +49,13 @@ class BobRossArProjection {
       ) / 2;
     }
 
+    const newIndex = Math.floor(6 * Math.random());
+    if (this.index !== newIndex) {
+      this.index = newIndex;
+      this.mesh2.material.map = this.textures[this.index];
+      this.mesh2.material.needsUpdate = true;
+    }
+
     const k1 = -1 / 15; // horizontal constant
     const k2 = 12.9; // size constant
     const k3 = -1 / 13; // vertical constant
@@ -54,6 +63,7 @@ class BobRossArProjection {
     const area = Math.pow(getArea(corners), 0.25);
     const camY = 63.4 - 7.45 * area + 0.2427 * area * area;
     const camZ = k3 * (corners[0].y - (HEIGHT/2));
+
     // this.mesh.rotation.y = theta;
     this.mesh2.rotation.y = theta;
     this.camera.position.x = camX;
