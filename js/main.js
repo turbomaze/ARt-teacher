@@ -248,16 +248,13 @@ class BobRossAr {
       ) || 0;
 
       // render the rotated artwork onto the projector's canvas
-      this.projector.render(-theta, phi);
+      this.projector.render(corners);
 
       // draw the projected image on the canvas
-      const xOff = corners[1].x;
-      const yOff = corners[1].y;
-      const paperW = 400;
-      const paperH = 300;
       this.renderCtx.drawImage(
-        this.projectedCanvas, xOff, yOff,
-        paperW, paperH
+        this.projectedCanvas,
+        0, 0,
+        this.width, this.height
       );
     }
   }
