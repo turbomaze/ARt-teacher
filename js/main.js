@@ -91,6 +91,7 @@ class BobRossAr {
     this.renderCanvas = renderCanvas;
     this.renderCtx = this.renderCanvas.getContext('2d');
     document.body.appendChild(this.projector.renderer.domElement);
+    this.projector.renderer.domElement.style.display = 'none';
     this.projectedCanvas = this.projector.renderer.domElement;
     this.isFullScreen = false;
     this.isStreaming = false;
@@ -234,7 +235,7 @@ class BobRossAr {
         return cornerCopy;
       }));
       const corners = this.markers[0].corners;
-      const theta = 0.6 * Math.atan(
+      const theta = Math.atan(
         (corners[0].x - corners[1].x) / (corners[0].y - corners[1].y)
       );
       const negativePhi = BobRossAr.getDist(corners[0], corners[3]) <
@@ -248,7 +249,7 @@ class BobRossAr {
       ) || 0;
 
       // render the rotated artwork onto the projector's canvas
-      this.projector.render(corners);
+      this.projector.render(corners, theta);
 
       // draw the projected image on the canvas
       this.renderCtx.drawImage(
