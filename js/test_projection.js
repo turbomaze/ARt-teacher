@@ -14,13 +14,22 @@ class BobRossArProjection {
     this.camera.up = new THREE.Vector3(0, 1, 0);
     this.camera.lookAt(new THREE.Vector3(0, 0, -4));
 
+    // reference
     const geometry = new THREE.CubeGeometry(4, 0.01, 4);
-    const texture = THREE.ImageUtils.loadTexture('images/MINION-pink.png');
+    const texture = THREE.ImageUtils.loadTexture('images/MINION-transparent.png');
     const material = new THREE.MeshPhongMaterial({map: texture});
     material.transparent = true;
-    this.mesh = new THREE.Mesh(geometry, material);
-    this.mesh.position.set(0, 0, -5.5);
-    this.scene.add(this.mesh);
+    // this.mesh = new THREE.Mesh(geometry, material);
+    // this.mesh.position.set(0.5, 0, -7);
+    // this.scene.add(this.mesh);
+
+    const www = 15;
+    const hhh = 10;
+    const geometry2 = new THREE.CubeGeometry(www, 0.01, hhh);
+    geometry2.translate(www/2, 0, hhh/2);
+    this.mesh2 = new THREE.Mesh(geometry2, material);
+    this.mesh2.position.set(0.5 + 2, 0, -7 + 2);
+    this.scene.add(this.mesh2);
 
     this.renderer = new THREE.WebGLRenderer({ alpha: true });
     this.renderer.setClearColor(0x000000, 0);
@@ -38,14 +47,15 @@ class BobRossArProjection {
       ) / 2;
     }
 
-    const k1 = -1 / 20; // horizontal constant
+    const k1 = -1 / 15; // horizontal constant
     const k2 = 12.9; // size constant
-    const k3 = -1 / 15; // vertical constant
+    const k3 = -1 / 13; // vertical constant
     const camX = k1 * (corners[0].x - (WIDTH/2));
     const area = Math.pow(getArea(corners), 0.25);
     const camY = 63.4 - 7.45 * area + 0.2427 * area * area;
     const camZ = k3 * (corners[0].y - (HEIGHT/2));
-    this.mesh.rotation.y = theta;
+    // this.mesh.rotation.y = theta;
+    this.mesh2.rotation.y = theta;
     this.camera.position.x = camX;
     this.camera.position.y = camY;
     this.camera.position.z = camZ;

@@ -236,17 +236,8 @@ class BobRossAr {
       }));
       const corners = this.markers[0].corners;
       const theta = Math.atan(
-        (corners[0].x - corners[1].x) / (corners[0].y - corners[1].y)
+        (corners[3].y - corners[0].y) / (corners[0].x - corners[3].x)
       );
-      const negativePhi = BobRossAr.getDist(corners[0], corners[3]) <
-        BobRossAr.getDist(corners[1], corners[2]);
-      const phi = (negativePhi ? -0.25 : 0.25) * Math.acos(
-        BobRossAr.getDist(
-          corners[2], corners[3]
-        ) / (BobRossAr.getDist(
-          corners[0], corners[3]
-        ) + 0.00001)
-      ) || 0;
 
       // render the rotated artwork onto the projector's canvas
       this.projector.render(corners, theta);
