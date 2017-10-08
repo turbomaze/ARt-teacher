@@ -20,8 +20,7 @@ class BobRossArProjection {
     this.index = 0;
     this.textures = [];
     for (let i = 0; i < 6; i++) {
-      // const texture = THREE.ImageUtils.loadTexture('images/'+NAME+(i + 1)+'.png');
-      const texture = THREE.ImageUtils.loadTexture('images/MINION-pink.png');
+      const texture = THREE.ImageUtils.loadTexture('images/'+NAME+(i + 1)+'.png');
       this.textures.push(texture);
     }
     this.material = new THREE.MeshPhongMaterial({map: this.textures[this.index]});
