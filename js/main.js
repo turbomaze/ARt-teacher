@@ -94,7 +94,7 @@ class BobRossAr {
     // objectdetect stuff
     const detectorSize = 120;
     this.smoother = new Smoother(
-      [0.8, 0.8, 0.6, 0.6],
+      [0.8, 0.8, 0.8, 0.8],
       [0, 0, 0, 0]
     );
     this.detector = new objectdetect.detector(
@@ -170,7 +170,8 @@ class BobRossAr {
   process() {
     const self = this;
 
-    if (this.frames % 2 === 0) {
+    const computeEveryNFrames = 1;
+    if (this.frames % computeEveryNFrames === 0) {
       // find new faces
       const newFaces = this.detector.detect(this.video, 1).map((face) => {
         const widthMultiplier = self.video.videoWidth / self.detector.canvas.width;
@@ -184,7 +185,7 @@ class BobRossAr {
           confidence: face[4],
         };
       }).filter(face => {
-        return face.confidence > 4;
+        return face.confidence > 3;
       });
 
       // match the new faces to the old faces
@@ -206,7 +207,7 @@ class BobRossAr {
 
       // collect all the faces into an organized updated set
       const allFaces = matchedFaces;
-      const maxStale = 2;
+      const maxStale = 4;
       this.faces.forEach(face => {
         if (!(face.id in matchedIds)) {
           if (face.hasOwnProperty('staleness')) {
@@ -223,9 +224,42 @@ class BobRossAr {
           }
         }
       });
+
       this.faces = allFaces;
     }
 
+    if (this.faces.length >= 3) {
+      console.log(this.faces.map(a => {
+        return {x: a.x, y: a.y};
+      }));
+      // identify the faces
+      const rightFace = this.faces.sort((a, b) => {
+        return b.x - a.x;
+      })[0];
+      const botFace = this.faces.filter(a => {
+        return a.id !== rightFace.id;
+      }).sort((a, b) => {
+        return a.y - b.y;
+      })[1];
+      const topFace = this.faces.filter(a => {
+        return a.id !== rightFace.id && a.id !== botFace.id;
+      }).sort((a, b) => {
+        return (a.x + a.y) - (b.x + b.y);
+      })[0];
+      const lastFace = {x: rightFace.x, y: botFace.y};
+      this.renderCtx.fillStyle = 'red';
+      this.renderCtx.beginPath();
+      this.renderCtx.moveTo(topFace.x, topFace.y);
+      this.renderCtx.lineTo(rightFace.x, rightFace.y);
+      this.renderCtx.lineTo(lastFace.x, lastFace.y);
+      this.renderCtx.lineTo(botFace.x, botFace.y);
+      this.renderCtx.closePath();
+      this.renderCtx.fill();
+
+      // this.faces = [topFace, botFace, rightFace];
+    }
+
+    // box the faces
     this.renderCtx.strokeStyle = 'red';
     for (let i = 0; i < this.faces.length; i++) {
       const face = this.faces[i];
