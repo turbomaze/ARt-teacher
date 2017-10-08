@@ -183,6 +183,10 @@ class BobRossAr {
         const closestMarker = self.getClosestExistingMarker(marker);
         if (closestMarker.distance < matchThresh) {
           marker.id = closestMarker.id;
+          for (let i = 0; i < 4; i++) {
+            marker.corners[i].x = (marker.corners[i].x + closestMarker.corners[i].x) / 2;
+            marker.corners[i].y = (marker.corners[i].y + closestMarker.corners[i].y) / 2;
+          }
           matchedIds[marker.id] = true;
         } else {
           marker.id = Math.random().toString();
@@ -264,18 +268,19 @@ class BobRossAr {
   getClosestExistingMarker(marker) {
     let bestDist = Infinity;
     let bestId = false;
-    let bestBlocked = false;
+    let bestCorners = false;
     this.markers.forEach(existingMarker => {
       const dist = Math.sqrt(
         Math.pow(existingMarker.corners[0].x - marker.corners[0].x, 2) +
         Math.pow(existingMarker.corners[0].y - marker.corners[0].y, 2)
       );
       if (dist < bestDist) {
+        bestCorners = existingMarker.corners;
         bestDist = dist;
         bestId = existingMarker.id;
       }
     });
-    return { id: bestId, distance: bestDist };
+    return { id: bestId, distance: bestDist, corners: bestCorners };
   }
 }
 
