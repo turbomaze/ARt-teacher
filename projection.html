@@ -1,39 +1,32 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset=utf-8>
-		<title>index.html</title>
-		<style>
-			body { margin: 0; }
-			canvas { width: 100%; height: 100% }
-		</style>
-	</head>
-	<body>
+  <head>
+    <title>Testing out projections</title>
+    <style>
+    body {
+     margin: 0px;
+     background-color: #fff;
+     overflow: hidden;
+    }
+    </style>
 
-		<script src="three.js"></script>
-		<script>
-			var scene = new THREE.Scene();
-			var camera = new THREE.PerspectiveCamera();
-
-			var renderer = new THREE.WebGLRenderer();
-			renderer.setSize( window.innerWidth, window.innerHeight );
-			document.body.appendChild( renderer.domElement );
-
-			var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-			var material = new THREE.MeshDepthMaterial( { map: THREE.ImageUtils.loadTexture('15931-200.png', THREE.CubeRefractionMapping) } );
-			var cube = new THREE.Mesh( geometry, material );
-			scene.add( cube );
-
-			camera.position.z = 5;
-
-			function animate() {
-				requestAnimationFrame( animate );
-				cube.rotation.x += 0.05;
-				cube.rotation.y += 0.05;
-				renderer.render( scene, camera );
-				}
-			animate();
-			
-		</script>
-	</body>
+    <script src="js/lib/three.min.js"></script>
+    <script src="js/projection.js"></script>
+    <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const projector = new BobRossArProjection();
+      document.body.appendChild(projector.renderer.domElement);
+      projector.render(
+        [
+          {x: 291.46685791015625, y: 199.87519073486328},
+          {x: 291.49768829345703, y: 139.75101470947266},
+          {x: 352.02486419677734, y: 137.25241088867188},
+          {x: 351.65335845947266, y: 198.73106384277344}
+        ], 0.02, 0
+      );
+    });
+    </script>
+  </head>
+  <body>
+  </body>
 </html>

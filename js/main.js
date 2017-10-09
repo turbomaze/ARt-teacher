@@ -184,8 +184,12 @@ class BobRossAr {
         if (closestMarker.distance < matchThresh) {
           marker.id = closestMarker.id;
           for (let i = 0; i < 4; i++) {
-            marker.corners[i].x = (marker.corners[i].x + closestMarker.corners[i].x) / 2;
-            marker.corners[i].y = (marker.corners[i].y + closestMarker.corners[i].y) / 2;
+            marker.corners[i].x = (
+              marker.corners[i].x + closestMarker.corners[i].x
+            ) / 2;
+            marker.corners[i].y = (
+              marker.corners[i].y + closestMarker.corners[i].y
+            ) / 2;
           }
           matchedIds[marker.id] = true;
         } else {
