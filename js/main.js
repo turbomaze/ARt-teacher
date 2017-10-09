@@ -36,7 +36,10 @@ class BobRossAr {
   }
 
   static registerVideoHandlers(width, height, streamCb, errCb) {
-    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+    navigator.getUserMedia = navigator.getUserMedia ||
+      navigator.webkitGetUserMedia ||
+      navigator.mozGetUserMedia ||
+      navigator.msGetUserMedia;
     if (navigator.getUserMedia) {
       if (location.hash !== '#desktop') {
         navigator.getUserMedia(
@@ -83,12 +86,13 @@ class BobRossAr {
   }
 
   constructor(width, height, fps, video, renderCanvas) {
-    this.projector = new BobRossArProjection();
-
     this.aruco = new AR.Detector();
-    this.posit = new POS.Posit(41, this.width); // 41mm markers
+    this.scale = 42; // size of markers in mm
+    this.posit = new POS.Posit(this.scale, width);
     this.markers = [];
     this.index = 0;
+
+    this.projector = new BobRossArProjection(width, height, this.scale);
 
     this.video = video;
     this.renderCanvas = renderCanvas;
@@ -169,60 +173,57 @@ class BobRossAr {
   process() {
     const self = this;
 
-    const computeEveryNFrames = 1;
-    if (this.frames % computeEveryNFrames === 0) {
-      // detect new markers
-      const newMarkers = this.aruco.detect(
-        this.renderCtx.getImageData(0, 0, this.width, this.height)
-      );
+    // detect new markers
+    const newMarkers = this.aruco.detect(
+      this.renderCtx.getImageData(0, 0, this.width, this.height)
+    );
 
-      // match the new markers to the old markers
-      const matchThresh = 30;
-      const matchedIds = {};
-      const matchedMarkers = newMarkers.map(marker => {
-        const closestMarker = self.getClosestExistingMarker(marker);
-        if (closestMarker.distance < matchThresh) {
-          marker.id = closestMarker.id;
-          for (let i = 0; i < 4; i++) {
-            marker.corners[i].x = (
-              marker.corners[i].x + closestMarker.corners[i].x
-            ) / 2;
-            marker.corners[i].y = (
-              marker.corners[i].y + closestMarker.corners[i].y
-            ) / 2;
-          }
-          matchedIds[marker.id] = true;
-        } else {
-          marker.id = Math.random().toString();
+    // match the new markers to the old markers
+    const matchThresh = 30;
+    const matchedIds = {};
+    const matchedMarkers = newMarkers.map(marker => {
+      const closestMarker = self.getClosestExistingMarker(marker);
+      if (closestMarker.distance < matchThresh) {
+        marker.id = closestMarker.id;
+        for (let i = 0; i < 4; i++) {
+          marker.corners[i].x = (
+            marker.corners[i].x + closestMarker.corners[i].x
+          ) / 2;
+          marker.corners[i].y = (
+            marker.corners[i].y + closestMarker.corners[i].y
+          ) / 2;
         }
-        return marker;
-      });
+        matchedIds[marker.id] = true;
+      } else {
+        marker.id = Math.random().toString();
+      }
+      return marker;
+    });
 
-      // collect all the markers into an organized updated set
-      const allMarkers = matchedMarkers;
-      const maxStale = 4;
-      this.markers.forEach(marker => {
-        if (!(marker.id in matchedIds)) {
-          if (marker.hasOwnProperty('staleness')) {
-            if (marker.staleness > maxStale) {
-              // don't add it
-            } else {
-              // add it with increased staleness
-              marker.staleness += 1;
-              allMarkers.push(marker);
-            }
+    // collect all the markers into an organized updated set
+    const allMarkers = matchedMarkers;
+    const maxStale = 4;
+    this.markers.forEach(marker => {
+      if (!(marker.id in matchedIds)) {
+        if (marker.hasOwnProperty('staleness')) {
+          if (marker.staleness > maxStale) {
+            // don't add it
           } else {
-            marker.staleness = 1;
+            // add it with increased staleness
+            marker.staleness += 1;
             allMarkers.push(marker);
           }
+        } else {
+          marker.staleness = 1;
+          allMarkers.push(marker);
         }
-      });
+      }
+    });
 
-      this.markers = allMarkers;
-    }
+    this.markers = allMarkers;
 
-    // detect the markers
-    this.markers.map(marker => {
+    // outline the markers
+    this.markers.forEach(marker => {
       const corners = marker.corners;
       this.renderCtx.lineWidth = 3;
       this.renderCtx.strokeStyle = 'red';
@@ -233,7 +234,6 @@ class BobRossAr {
       this.renderCtx.lineTo(corners[3].x, corners[3].y);
       this.renderCtx.closePath();
       this.renderCtx.stroke();
-      return marker;
     });
 
     // render the sketch
@@ -242,16 +242,12 @@ class BobRossAr {
       const pose = this.posit.pose(this.markers[0].corners.map(c => {
         const cornerCopy = JSON.parse(JSON.stringify(c));
         cornerCopy.x = cornerCopy.x - (self.width / 2);
-        cornerCopy.y = cornerCopy.y - (self.height / 2);
+        cornerCopy.y = (self.height / 2) - cornerCopy.y;
         return cornerCopy;
       }));
-      const corners = this.markers[0].corners;
-      const theta = Math.atan(
-        (corners[3].y - corners[0].y) / (corners[0].x - corners[3].x)
-      );
 
       // render the rotated artwork onto the projector's canvas
-      this.projector.render(corners, theta, this.index);
+      this.projector.render(pose, this.index);
 
       // draw the projected image on the canvas
       this.renderCtx.drawImage(

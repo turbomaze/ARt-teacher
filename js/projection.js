@@ -1,78 +1,64 @@
 class BobRossArProjection {
-  static getArea(cs) {
-    return Math.abs(
-      (cs[0].x * cs[1].y - cs[0].y * cs[1].x) +
-      (cs[1].x * cs[2].y - cs[1].y * cs[2].x) +
-      (cs[2].x * cs[3].y - cs[2].y * cs[3].x) +
-      (cs[3].x * cs[0].y - cs[3].y * cs[0].x)
-    ) / 2;
-  }
-
-  constructor() {
-    this.WIDTH = 732;
-    this.HEIGHT = 411;
+  constructor(width, height, scale) {
+    this.WIDTH = width;
+    this.HEIGHT = height;
     this.NAME = 'MINION-transparent_STEP';
+    this.scale = scale;
 
     this.scene = new THREE.Scene();
     const light = new THREE.AmbientLight(0xffffff); // hard white light
-    this.scene.add( light );
+    this.scene.add(light);
 
-    this.camera = new THREE.PerspectiveCamera(
-      60, this.WIDTH/this.HEIGHT, 1, 1000
-    );
-    this.camera.position.set(0, 17, 0.1);
-    this.camera.up = new THREE.Vector3(0, 1, 0);
-    this.camera.lookAt(new THREE.Vector3(0, 0, -4));
+    this.camera = new THREE.PerspectiveCamera(31, this.WIDTH/this.HEIGHT, 1, 1000);
 
-    // reference
-    const geometry = new THREE.CubeGeometry(4, 0.01, 4);
+    // preload the textures
     this.index = 0;
     this.textures = [];
-    for (let i = 0; i < 6; i++) {
-      const texture = THREE.ImageUtils.loadTexture(
-        './images/' + this.NAME + (i + 1) + '.png'
+    for (let i = 1; i <= 6; i++) {
+      this.textures.push(
+        THREE.ImageUtils.loadTexture('./images/' + this.NAME + i + '.png')
       );
-      this.textures.push(texture);
     }
-    this.material = new THREE.MeshPhongMaterial({
-      map: this.textures[this.index]
-    });
+    this.material = new THREE.MeshPhongMaterial({map: this.textures[this.index]});
     this.material.transparent = true;
 
-    const www = 17;
-    const hhh = 12;
-    const geometry2 = new THREE.CubeGeometry(www, 0.01, hhh);
-    geometry2.translate(www/2, 0, hhh/2);
-    this.mesh2 = new THREE.Mesh(geometry2, this.material);
-    this.mesh2.position.set(0.5 + 2, 0, -7 + 2);
-    this.scene.add(this.mesh2);
+    // the marker geometry
+    const marker = new THREE.PlaneGeometry(1.0, 1.0, 0);
+    const markerMesh = new THREE.Mesh(
+      marker, 
+      new THREE.MeshPhongMaterial({color: '#ff00ff'})
+    );
+    this.marker = new THREE.Object3D();
+    this.marker.add(markerMesh);
+    this.scene.add(this.marker);
 
+    // config the renderer
     this.renderer = new THREE.WebGLRenderer({ alpha: true });
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.setSize(this.WIDTH, this.HEIGHT);
     this.renderer.domElement.id = 'projected-image';
   }
 
-  render(corners, theta, idx) {
+  render(pose, idx) {
     if (this.index !== idx) {
       this.index = idx;
-      this.mesh2.material.map = this.textures[this.index];
-      this.mesh2.material.needsUpdate = true;
+      this.mesh.material.map = this.textures[this.index];
+      this.mesh.material.needsUpdate = true;
     }
 
-    const k1 = -1 / 25; // horizontal constant
-    const k2 = 12.9; // size constant
-    const k3 = -1 / 23; // vertical constant
-    const camX = k1 * (corners[0].x - (this.WIDTH/2));
-    const area = Math.pow(BobRossArProjection.getArea(corners), 0.25);
-    const camY = 63.4 - 7.45 * area + 0.2427 * area * area;
-    const camZ = k3 * (corners[0].y - (this.HEIGHT/2));
+    // update the marker mesh
+    this.marker.scale.x = this.scale; // mm on each side
+    this.marker.scale.y = this.scale;
+    this.marker.scale.z = this.scale;
 
-    // this.mesh.rotation.y = theta;
-    this.mesh2.rotation.y = theta;
-    this.camera.position.x = camX;
-    this.camera.position.y = camY;
-    this.camera.position.z = camZ;
+    this.marker.rotation.x = -Math.asin(-pose.bestRotation[1][2]);
+    this.marker.rotation.y = -Math.atan2(pose.bestRotation[0][2], pose.bestRotation[2][2]);
+    this.marker.rotation.z = Math.atan2(pose.bestRotation[1][0], pose.bestRotation[1][1]);
+
+    this.marker.position.x = pose.bestTranslation[0];
+    this.marker.position.y = pose.bestTranslation[1];
+    this.marker.position.z = -pose.bestTranslation[2];
+
     this.renderer.render(this.scene, this.camera);
   }
 }
