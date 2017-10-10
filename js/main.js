@@ -258,13 +258,6 @@ class BobRossAr {
     }
   }
 
-  static getDist(a, b) {
-    return Math.sqrt(
-      Math.pow(a.x - b.x, 2) +
-      Math.pow(a.y - b.y, 2)
-    );
-  }
-
   getClosestExistingMarker(marker) {
     let bestDist = Infinity;
     let bestId = false;
